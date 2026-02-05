@@ -1,41 +1,64 @@
 package com.example.umafacts.model
 
+import com.google.gson.annotations.SerializedName
+
 data class umamusumeDetail(
-    val birth_day: Int,
+    @SerializedName("birth_year")
+    val birthDay: Int,
+    @SerializedName("birth_month")
     val birth_month: Int,
-    val category_label: String,
-    val category_label_en: String,
-    val category_value: String,
-    val color_main: String,
-    val color_sub: String,
-    val date_gmt: String,
-    val detail_img_pc: Any,
-    val detail_img_sp: Any,
-    val ears_fact: Any,
-    val family_fact: Any,
-    val game_id: Int,
+    @SerializedName("category_label")
+    val categoryLabel: String,
+    @SerializedName("category_label_en")
+    val enCategoryLabel: String,
+    @SerializedName("category_value")
+    val categoryValue: String,
+    @SerializedName("color_main")
+    val colorMain: String,
+    @SerializedName("color_sub")
+    val colorSub: String,
+    @SerializedName("date_gmt")
+    val dateGmt: String,
+    @SerializedName("detail_img_pc")
+    val detailImgPc: Any,
+    @SerializedName("detail_img_sp")
+    val detailImgSp: Any,
+    @SerializedName("ears_fact")
+    val earsFact: Any,
+    @SerializedName("family_fact")
+    val familyFact: Any,
+    @SerializedName("game_id")
+    val gameId: Int,
     val grade: String,
     val height: Int,
     val id: Int,
     val link: String,
-    val modified_gmt: String,
-    val name_en: String,
-    val name_en_internal: String,
-    val name_jp: String,
-    val preferred_url: String,
+    @SerializedName("modified_gmt")
+    val modifiedGmt: String,
+    @SerializedName("name_en")
+    val nameEn: String,
+    @SerializedName("name_en_internal")
+    val nameInternal: String,
+    @SerializedName("name_jp")
+    val nameJp: String,
+    @SerializedName("preferred_url")
+    val preferredUrl: String,
     val profile: String,
     val residence: String,
-    val row_number: Int,
-    val shoe_size: Any,
-    val size_b: Int,
-    val size_h: Int,
-    val size_w: Int,
+    @SerializedName("row_number")
+    val rowNumber: Int,
+    @SerializedName("shoe_size")
+    val shoeSize: Any,
     val slogan: String,
-    val sns_header: String,
-    val sns_icon: String,
+    @SerializedName("sns_header")
+    val snsHeader: String,
+    @SerializedName("sns_icon")
+    val snsIcon: String,
     val strengths: Any,
-    val tail_fact: Any,
-    val thumb_img: String,
+    @SerializedName("tail_fact")
+    val tailFact: Any,
+    @SerializedName("thumb_img")
+    val thumbImg: String,
     val voice: String,
     val weaknesses: Any,
     val weight: Any
