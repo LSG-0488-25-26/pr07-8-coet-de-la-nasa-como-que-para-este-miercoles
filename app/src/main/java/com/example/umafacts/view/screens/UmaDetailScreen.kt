@@ -12,9 +12,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.apicultura.model.CharacterDetail
-import com.example.apicultura.R
-import com.example.apicultura.viewmodel.UmaViewModel
+import com.example.umafacts.model.UmamusumeDetail
+import com.example.umafacts.R
+import com.example.umafacts.viewmodel.UmaViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.livedata.observeAsState
 

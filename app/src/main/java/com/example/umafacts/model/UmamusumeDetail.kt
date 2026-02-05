@@ -2,7 +2,7 @@ package com.example.umafacts.model
 
 import com.google.gson.annotations.SerializedName
 
-data class umamusumeDetail(
+data class UmamusumeDetail(
     @SerializedName("birth_year")
     val birthDay: Int,
     @SerializedName("birth_month")

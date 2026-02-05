@@ -6,8 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.NavController
-import com.example.apicultura.viewmodel.UmaViewModel
-import com.example.apicultura.view.components.UmaItem
+import com.example.umafacts.viewmodel.UmaViewModel
+import com.example.umafacts.view.components.UmaItem
 import kotlin.collections.emptyList
 
 @Composable
