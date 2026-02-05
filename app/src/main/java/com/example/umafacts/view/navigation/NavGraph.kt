@@ -5,6 +5,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.umafacts.view.screens.UmaDetailScreen
+import com.example.umafacts.view.screens.UmaListScreen
 import com.example.umafacts.viewmodel.UmaViewModel
 
 @Composable

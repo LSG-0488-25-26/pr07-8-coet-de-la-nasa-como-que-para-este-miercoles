@@ -17,18 +17,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.umafacts.R
 import androidx.core.graphics.toColorInt
-import com.example.umafacts.model.CharacterListItem
+import com.example.umafacts.model.UmamusumeDetail
 
 
 @Composable
 fun UmaItem(
-    character: CharacterListItem,
+    character: UmamusumeDetail,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
 
     val mainColor = try {
-        Color((character.color_main ?: "#CCCCCC").toColorInt())
+        Color((character.colorMain ?: "#CCCCCC").toColorInt())
     } catch (_: Exception) {
         Color.Gray
     }
@@ -50,17 +50,17 @@ fun UmaItem(
                 painter = painterResource(
                     id = imageFromInternalName(
                         context,
-                        character.name_en_internal
+                        character.nameInternal
                     )
                 ),
-                contentDescription = character.name_en,
+                contentDescription = character.nameEn,
                 modifier = Modifier
                     .size(64.dp)
                     .background(Color.LightGray, RoundedCornerShape(8.dp))
             )
             Spacer(modifier = Modifier.width(12.dp))
 
-            character.name_en?.let {
+            character.nameEn?.let {
                 Text(
                     text = it,
                     color = Color.White,

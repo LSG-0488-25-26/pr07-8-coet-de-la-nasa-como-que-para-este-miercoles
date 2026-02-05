@@ -16,8 +16,6 @@ import com.example.umafacts.model.UmamusumeDetail
 import com.example.umafacts.R
 import com.example.umafacts.viewmodel.UmaViewModel
 import androidx.compose.ui.Alignment
-import androidx.compose.runtime.livedata.observeAsState
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UmaDetailScreen(
@@ -36,7 +34,7 @@ fun UmaDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(character?.name_en ?: "Loading...") },
+                title = { Text(character?.nameEn ?: "Loading...") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -63,7 +61,7 @@ fun UmaDetailScreen(
 
 
 @Composable
-fun CharacterDetailContent(character: CharacterDetail, paddingValues: PaddingValues) {
+fun CharacterDetailContent(character: UmamusumeDetail, paddingValues: PaddingValues) {
     // Scrollable layout
     LazyColumn(
         modifier = Modifier
