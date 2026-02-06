@@ -6,7 +6,7 @@ data class UmamusumeDetail(
     @SerializedName("birth_year")
     val birthDay: Int,
     @SerializedName("birth_month")
-    val birth_month: Int,
+    val birthMonth: Int,
     @SerializedName("category_label")
     val categoryLabel: String,
     @SerializedName("category_label_en")

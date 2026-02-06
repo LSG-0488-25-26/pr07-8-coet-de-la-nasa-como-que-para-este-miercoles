@@ -34,7 +34,7 @@ fun UmaDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(character?.nameEn ?: "Loading...") },
+                title = { Text(character.nameEn ?: "Loading...") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -73,7 +73,7 @@ fun CharacterDetailContent(character: UmamusumeDetail, paddingValues: PaddingVal
         // ----- Character Image -----
         item {
             val imageId = try {
-                val field = R.drawable::class.java.getField(character.name_en_internal)
+                val field = R.drawable::class.java.getField(character.nameInternal)
                 field.getInt(null)
             } catch (e: Exception) {
                 R.drawable.uma_placeholder
@@ -81,7 +81,7 @@ fun CharacterDetailContent(character: UmamusumeDetail, paddingValues: PaddingVal
 
             Image(
                 painter = painterResource(id = imageId),
-                contentDescription = character.name_en,
+                contentDescription = character.nameEn,
                 modifier = Modifier
                     .size(200.dp)
                     .clip(RoundedCornerShape(12.dp))
@@ -96,10 +96,10 @@ fun CharacterDetailContent(character: UmamusumeDetail, paddingValues: PaddingVal
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    character.name_en?.let {
+                    character.nameEn?.let {
                         Text(it, style = MaterialTheme.typography.headlineSmall)
                     }
-                    character.name_jp?.let {
+                    character.nameJp?.let {
                         Text(it, style = MaterialTheme.typography.bodyMedium)
                     }
                     Text(character.profile ?: "No description available.")
@@ -116,7 +116,7 @@ fun CharacterDetailContent(character: UmamusumeDetail, paddingValues: PaddingVal
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
-                        text = "Birthday: ${character.birth_month ?: "--"}/${character.birth_day ?: "--"}",
+                        text = "Birthday: ${character.birthDay ?: "--"}/${character.birthMonth ?: "--"}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -132,11 +132,11 @@ fun CharacterDetailContent(character: UmamusumeDetail, paddingValues: PaddingVal
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
-                        text = "Category: ${character.category_label ?: "--"} / ${character.category_label_en ?: "--"}",
+                        text = "Category: ${character.categoryLabel ?: "--"} / ${character.enCategoryLabel ?: "--"}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
-                        text = "Category Value: ${character.category_value ?: "--"}",
+                        text = "Category Value: ${character.categoryValue ?: "--"}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -165,9 +165,9 @@ fun CharacterDetailContent(character: UmamusumeDetail, paddingValues: PaddingVal
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Ears fact: ${character.ears_fact ?: "--"}")
-                    Text("Tail fact: ${character.tail_fact ?: "--"}")
-                    Text("Family fact: ${character.family_fact ?: "--"}")
+                    Text("Ears fact: ${character.earsFact ?: "--"}")
+                    Text("Tail fact: ${character.tailFact ?: "--"}")
+                    Text("Family fact: ${character.familyFact ?: "--"}")
                 }
             }
         }
@@ -194,9 +194,9 @@ fun CharacterDetailContent(character: UmamusumeDetail, paddingValues: PaddingVal
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Game ID: ${character.game_id}")
+                    Text("Game ID: ${character.gameId}")
                     Text("Grade: ${character.grade ?: "--"}")
-                    Text("Row number: ${character.row_number}")
+                    Text("Row number: ${character.rowNumber}")
                 }
             }
         }

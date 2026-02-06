@@ -10,11 +10,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+data class UmamusumeWithImage(
+    val detail: UmamusumeDetail,
+    val uniformImageUrl: String?
+)
+
 class UmaViewModel : ViewModel() {
     private val repository = Repository(APIInterface.create())
 
-    private val _umamusumeList = MutableStateFlow<List<UmamusumeDetail>>(emptyList())
-    val umamusumeList: StateFlow<List<UmamusumeDetail>> = _umamusumeList.asStateFlow()
+    private val _umamusumeList = MutableStateFlow<List<UmamusumeWithImage>>(emptyList())
+    val umamusumeList: StateFlow<List<UmamusumeWithImage>> = _umamusumeList.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -33,8 +38,16 @@ class UmaViewModel : ViewModel() {
 
             repository.getUmamusumeList()
                 .onSuccess { umamusumeList ->
-                    _umamusumeList.value = umamusumeList
-                    println("Fetched ${umamusumeList.size} characters")
+                    // Fetch images for each character
+                    val listWithImages = umamusumeList.map { uma ->
+                        val imageResult = repository.getUniformImage(uma.id)
+                        UmamusumeWithImage(
+                            detail = uma,
+                            uniformImageUrl = imageResult.getOrNull()
+                        )
+                    }
+                    _umamusumeList.value = listWithImages
+                    println("Fetched ${listWithImages.size} characters with images")
                 }
                 .onFailure { error ->
                     _error.value = error.message
