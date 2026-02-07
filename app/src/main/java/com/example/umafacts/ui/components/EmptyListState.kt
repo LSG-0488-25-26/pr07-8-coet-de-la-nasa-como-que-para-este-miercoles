@@ -1,4 +1,4 @@
-package com.example.umafacts.view.components
+package com.example.umafacts.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

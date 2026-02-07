@@ -1,8 +1,6 @@
 package com.example.umafacts.view.screens
 
-import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -21,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.umafacts.R
+import com.example.umafacts.ui.components.AudioPlayer
 import com.example.umafacts.ui.components.FactsSection
 import com.example.umafacts.ui.components.InfoCard
 import com.example.umafacts.ui.components.OutfitGallery
@@ -30,6 +29,7 @@ import com.example.umafacts.utils.textColorFor
 import com.example.umafacts.viewmodel.UmaDetailState
 import com.example.umafacts.viewmodel.UmaDetailViewModel
 import com.example.umafacts.viewmodel.UmaViewModel
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,8 +104,8 @@ fun UmaDetailScreen(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back),
                             contentDescription = "Back",
-                            tint = onMainColor,
-                            modifier = Modifier.scale(1.1f)
+                            modifier = Modifier.scale(1.1f),
+                            tint = Color.Unspecified
                         )
                     }
                 },
@@ -253,24 +253,12 @@ fun UmaDetailScreen(
 
 
 
+                        // Replace the voice button section in UmaDetailScreen.kt:
                         if (!character.voice.isNullOrBlank() && isValidUrl(character.voice)) {
-                            Button(
-                                onClick = {
-                                    try {
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(character.voice))
-                                        context.startActivity(intent)
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "Cannot open URL", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = subColor,
-                                    contentColor = onSubColor
-                                )
-                            ) {
-                                Text("Listen to Voice Preview")
-                            }
+                            AudioPlayer(
+                                audioUrl = character.voice,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -284,7 +272,7 @@ fun UmaDetailScreen(
 // Helper function to check URL validity
 private fun isValidUrl(url: String?): Boolean {
     return try {
-        url?.let { Uri.parse(it) } != null
+        url?.toUri() != null
     } catch (e: Exception) {
         false
     }

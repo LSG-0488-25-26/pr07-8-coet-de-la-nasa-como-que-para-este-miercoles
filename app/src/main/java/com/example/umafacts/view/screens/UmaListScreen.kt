@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.umafacts.R
 import com.example.umafacts.ui.components.UmaItem
-import com.example.umafacts.view.components.EmptyListState
+import com.example.umafacts.ui.components.EmptyListState
 import com.example.umafacts.viewmodel.UmaViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

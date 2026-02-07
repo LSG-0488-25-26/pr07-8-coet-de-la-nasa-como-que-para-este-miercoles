@@ -61,6 +61,13 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("androidx.compose.runtime:runtime")
+
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
+    implementation("androidx.media3:media3-session:1.2.1")
+
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+
     implementation(libs.androidx.compose.runtime.livedata)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.foundation)
