@@ -16,7 +16,12 @@ fun NavGraph(viewModel: UmaViewModel) {
     NavHost(navController = navController, startDestination = "list") {
 
         composable("list") {
-            UmaListScreen(viewModel = viewModel, navController = navController)
+            UmaListScreen(
+                viewModel = viewModel,
+                onCharacterClick = { characterId ->
+                    navController.navigate("detail/$characterId")
+                }
+            )
         }
 
         composable(
@@ -27,7 +32,7 @@ fun NavGraph(viewModel: UmaViewModel) {
             UmaDetailScreen(
                 viewModel = viewModel,
                 characterId = characterId,
-                onBack = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

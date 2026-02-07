@@ -1,5 +1,6 @@
 package com.example.umafacts.api
 
+import com.example.umafacts.model.CharacterImageResponse
 import com.example.umafacts.model.UmamusumeDetail
 
 class Repository(private val api: APIInterface) {
@@ -21,12 +22,24 @@ class Repository(private val api: APIInterface) {
         return try {
             val response = api.getCharacterImages(characterId)
             if (response.isSuccessful && response.body() != null) {
-                // Find the uniform category and get the latest image
                 val uniformCategory = response.body()!!.find {
                     it.labelEn == "Uniform"
                 }
                 val latestImage = uniformCategory?.images?.firstOrNull()?.image
                 Result.success(latestImage)
+            } else {
+                Result.failure(Exception("Error: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getCharacterImages(characterId: Int): Result<List<CharacterImageResponse>> {
+        return try {
+            val response = api.getCharacterImages(characterId)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Error: ${response.code()}"))
             }

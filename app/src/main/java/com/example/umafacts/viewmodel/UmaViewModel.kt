@@ -1,14 +1,17 @@
 package com.example.umafacts.viewmodel
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umafacts.api.APIInterface
 import com.example.umafacts.api.Repository
 import com.example.umafacts.model.UmamusumeDetail
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class UmamusumeWithImage(
     val detail: UmamusumeDetail,
@@ -18,91 +21,54 @@ data class UmamusumeWithImage(
 class UmaViewModel : ViewModel() {
     private val repository = Repository(APIInterface.create())
 
-    private val _umamusumeList = MutableStateFlow<List<UmamusumeWithImage>>(emptyList())
-    val umamusumeList: StateFlow<List<UmamusumeWithImage>> = _umamusumeList.asStateFlow()
+    private val _umamusumeList = MutableLiveData<List<UmamusumeWithImage>>(emptyList())
+    val umamusumeList: LiveData<List<UmamusumeWithImage>> = _umamusumeList
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _isLoading = MutableLiveData<Boolean>(false)
+    val isLoading: LiveData<Boolean> = _isLoading
 
-    private val _isLoadingMore = MutableStateFlow(false)
-    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
-
-    // Pagination state
-    private var allCharacters: List<UmamusumeDetail> = emptyList()
-    private var currentPage = 0
-    private val pageSize = 20
-    private var hasMorePages = true
+    private val _error = MutableLiveData<String?>(null)
+    val error: LiveData<String?> = _error
 
     init {
-        fetchUmamusume()
+        fetchAllUmamusume()
     }
 
-    private fun fetchUmamusume() {
+    fun fetchAllUmamusume() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
 
             repository.getUmamusumeList()
                 .onSuccess { fullList ->
-                    allCharacters = fullList
-                    currentPage = 0
-                    _umamusumeList.value = emptyList()
-                    loadNextPage()
+                    val completeList = fetchImagesForList(fullList)
+                    _umamusumeList.value = completeList
                 }
                 .onFailure { error ->
                     _error.value = error.message
-                    println("Error: ${error.message}")
                 }
 
             _isLoading.value = false
         }
     }
 
-    fun loadNextPage() {
-        if (_isLoadingMore.value || !hasMorePages) return
-
-        viewModelScope.launch {
-            _isLoadingMore.value = true
-
-            val startIndex = currentPage * pageSize
-            val endIndex = minOf(startIndex + pageSize, allCharacters.size)
-
-            if (startIndex >= allCharacters.size) {
-                hasMorePages = false
-                _isLoadingMore.value = false
-                return@launch
-            }
-
-            val pageCharacters = allCharacters.subList(startIndex, endIndex)
-
-
-            val pageWithImages = pageCharacters.map { uma ->
-                val imageResult = repository.getUniformImage(uma.id)
-                UmamusumeWithImage(
-                    detail = uma,
-                    uniformImageUrl = imageResult.getOrNull()
-                )
-            }
-
-
-            _umamusumeList.value += pageWithImages
-            currentPage++
-            hasMorePages = endIndex < allCharacters.size
-
-            println("Loaded page $currentPage: ${pageWithImages.size} characters")
-
-            _isLoadingMore.value = false
+    private suspend fun fetchImagesForList(list: List<UmamusumeDetail>): List<UmamusumeWithImage> {
+        return withContext(Dispatchers.IO) {
+            list.map { uma ->
+                async {
+                    val imageUrl = try {
+                        repository.getUniformImage(uma.id).getOrNull()
+                    } catch (e: Exception) {
+                        null
+                    }
+                    UmamusumeWithImage(detail = uma, uniformImageUrl = imageUrl)
+                }
+            }.awaitAll()
         }
     }
 
-    fun retry() {
-        allCharacters = emptyList()
-        currentPage = 0
-        hasMorePages = true
+    fun refreshData() {
         _umamusumeList.value = emptyList()
-        fetchUmamusume()
+        fetchAllUmamusume()
     }
 }
