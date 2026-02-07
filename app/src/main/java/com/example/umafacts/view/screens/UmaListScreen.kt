@@ -28,10 +28,11 @@ fun UmaListScreen(
 
     Scaffold(
         topBar = {
+            // Top bar with "Umamusume Facts" text
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(top = 32.dp)
                     .padding(bottom = 16.dp)
                     .padding(horizontal = 16.dp),
@@ -41,7 +42,7 @@ fun UmaListScreen(
                     text = "Umamusume Facts",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
