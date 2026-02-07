@@ -11,10 +11,16 @@ class Repository(private val api: APIInterface) {
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Error: ${response.code()}"))
+                val errorMessage = when (response.code()) {
+                    502 -> "Server is temporarily unavailable. Please try again later."
+                    500 -> "Internal server error"
+                    404 -> "Data not found"
+                    else -> "Error: ${response.code()} - ${response.message()}"
+                }
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception("Network error: ${e.message}"))
         }
     }
 
@@ -28,10 +34,16 @@ class Repository(private val api: APIInterface) {
                 val latestImage = uniformCategory?.images?.firstOrNull()?.image
                 Result.success(latestImage)
             } else {
-                Result.failure(Exception("Error: ${response.code()}"))
+                val errorMessage = when (response.code()) {
+                    502 -> "Server is temporarily unavailable"
+                    500 -> "Internal server error"
+                    404 -> "Character images not found"
+                    else -> "Error: ${response.code()}"
+                }
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception("Network error: ${e.message}"))
         }
     }
 
@@ -41,10 +53,16 @@ class Repository(private val api: APIInterface) {
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Error: ${response.code()}"))
+                val errorMessage = when (response.code()) {
+                    502 -> "Server is temporarily unavailable. Images cannot be loaded."
+                    500 -> "Internal server error"
+                    404 -> "Character images not found"
+                    else -> "Error: ${response.code()}"
+                }
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception("Network error: ${e.message}"))
         }
     }
 }

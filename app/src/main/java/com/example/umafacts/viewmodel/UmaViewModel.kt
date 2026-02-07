@@ -41,11 +41,15 @@ class UmaViewModel : ViewModel() {
 
             repository.getUmamusumeList()
                 .onSuccess { fullList ->
-                    val completeList = fetchImagesForList(fullList)
-                    _umamusumeList.value = completeList
+                    if (fullList.isNotEmpty()) {
+                        val completeList = fetchImagesForList(fullList)
+                        _umamusumeList.value = completeList
+                    } else {
+                        _error.value = "No characters found"
+                    }
                 }
                 .onFailure { error ->
-                    _error.value = error.message
+                    _error.value = error.message ?: "Failed to load characters"
                 }
 
             _isLoading.value = false
@@ -69,6 +73,11 @@ class UmaViewModel : ViewModel() {
 
     fun refreshData() {
         _umamusumeList.value = emptyList()
+        _error.value = null
         fetchAllUmamusume()
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 }

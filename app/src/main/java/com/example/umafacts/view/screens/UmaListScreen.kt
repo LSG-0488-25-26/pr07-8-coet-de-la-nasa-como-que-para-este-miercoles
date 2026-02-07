@@ -10,8 +10,10 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.umafacts.R
 import com.example.umafacts.ui.components.UmaItem
 import com.example.umafacts.view.components.EmptyListState
 import com.example.umafacts.viewmodel.UmaViewModel
@@ -28,12 +30,11 @@ fun UmaListScreen(
 
     Scaffold(
         topBar = {
-            // Top bar with "Umamusume Facts" text
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(top = 32.dp)
+                    .padding(top = 48.dp)
                     .padding(bottom = 16.dp)
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterStart
@@ -51,10 +52,22 @@ fun UmaListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             when {
                 isLoading && umamusumeList.isEmpty() -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Loading characters...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 error != null && umamusumeList.isEmpty() -> {
@@ -62,10 +75,36 @@ fun UmaListScreen(
                         modifier = Modifier.align(Alignment.Center).padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = "Error: $error")
+                        Icon(
+                            painter = painterResource(R.drawable.uma_placeholder),
+                            contentDescription = "Error",
+                            modifier = Modifier.size(120.dp),
+                            tint = Color.Gray.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = error ?: "Unknown error occurred",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.refreshData() }) {
-                            Text("Retry")
+                        Text(
+                            text = "The server may be temporarily unavailable. Please check your connection and try again.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Button(onClick = { viewModel.refreshData() }) {
+                                Text("Retry")
+                            }
+                            OutlinedButton(onClick = { viewModel.clearError() }) {
+                                Text("Dismiss")
+                            }
                         }
                     }
                 }

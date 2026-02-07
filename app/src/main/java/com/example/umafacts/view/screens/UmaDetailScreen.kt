@@ -2,13 +2,15 @@ package com.example.umafacts.view.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState // ✅ Necessary import
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -42,43 +44,67 @@ fun UmaDetailScreen(
 
     val context = LocalContext.current
 
-    // Find the character from the observed list
+    // Find the character from the observed list with null safety
     val character = remember(umamusumeList, characterId) {
         umamusumeList.find { it.detail.id == characterId }?.detail
     }
 
     LaunchedEffect(character) {
-        character?.let {
-            detailViewModel.loadCharacterDetails(it)
-        }
+        detailViewModel.loadCharacterDetails(character)
     }
 
-    if (character == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
-    // FIX: Use safe defaults for colors
-    val safeColorMain = character.colorMain.takeIf { !it.isNullOrBlank() } ?: "#808080"
-    val safeColorSub = character.colorSub.takeIf { !it.isNullOrBlank() } ?: "#A0A0A0"
+    // Use safe defaults
+    val safeColorMain = character?.colorMain?.takeIf { !it.isNullOrBlank() } ?: "#808080"
+    val safeColorSub = character?.colorSub?.takeIf { !it.isNullOrBlank() } ?: "#A0A0A0"
 
     val mainColor = parseColor(safeColorMain)
     val subColor = parseColor(safeColorSub)
     val onMainColor = textColorFor(mainColor)
     val onSubColor = textColorFor(subColor)
 
+    // Show loading or error states
+    if (character == null || state.error != null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (state.error != null) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.uma_placeholder),
+                        contentDescription = "Error",
+                        modifier = Modifier.size(120.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = state.error ?: "Character not found",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = onBackClick) {
+                        Text("Go Back")
+                    }
+                }
+            } else {
+                CircularProgressIndicator()
+            }
+        }
+        return
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(character.nameEn) },
+                title = {
+                    Text(character.nameEn.takeIf { !it.isNullOrBlank() } ?: "Unknown Character")
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back),
                             contentDescription = "Back",
-                            tint = Color.Unspecified,
+                            tint = onMainColor,
                             modifier = Modifier.scale(1.1f)
                         )
                     }
@@ -104,19 +130,6 @@ fun UmaDetailScreen(
                         color = onMainColor
                     )
                 }
-                state.error != null -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = "Error loading images", color = onMainColor)
-                        Text(
-                            text = state.error ?: "",
-                            color = onMainColor.copy(alpha = 0.7f),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
                 else -> {
                     Column(
                         modifier = Modifier
@@ -138,9 +151,16 @@ fun UmaDetailScreen(
                         )
 
                         CompositionLocalProvider(LocalContentColor provides onSubColor) {
+                            // Safe birthday formatting
+                            val birthdayText = try {
+                                formatBirthday(character.birthDay, character.birthMonth)
+                            } catch (e: Exception) {
+                                "Unknown"
+                            }
+
                             InfoCard(
                                 title = "Birthday",
-                                content = formatBirthday(character.birthDay, character.birthMonth),
+                                content = birthdayText,
                                 backgroundColor = subColor
                             )
 
@@ -154,21 +174,26 @@ fun UmaDetailScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                if (character.grade.isNotBlank()) {
+                                if (!character.grade.isNullOrBlank()) {
                                     InfoCard(
                                         title = "Grade",
                                         content = character.grade,
                                         backgroundColor = subColor,
                                         modifier = Modifier.weight(1f)
                                     )
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
                                 }
-                                if (character.residence.isNotBlank()) {
+
+                                if (!character.residence.isNullOrBlank()) {
                                     InfoCard(
                                         title = "Residence",
                                         content = character.residence,
                                         backgroundColor = subColor,
                                         modifier = Modifier.weight(1f)
                                     )
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
 
@@ -183,34 +208,60 @@ fun UmaDetailScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                val strengths = character.strengths?.toString()?.takeIf { it.isNotBlank() }
+                                val weaknesses = character.weaknesses?.toString()?.takeIf { it.isNotBlank() }
+
+                                if (!strengths.isNullOrBlank()) {
+                                    InfoCard(
+                                        title = "Strengths",
+                                        content = strengths,
+                                        backgroundColor = subColor,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+
+                                if (!weaknesses.isNullOrBlank()) {
+                                    InfoCard(
+                                        title = "Weaknesses",
+                                        content = weaknesses,
+                                        backgroundColor = subColor,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+
+                            if (!character.profile.isNullOrBlank()) {
                                 InfoCard(
-                                    title = "Strengths",
-                                    content = character.strengths as? String,
-                                    backgroundColor = subColor,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                InfoCard(
-                                    title = "Weaknesses",
-                                    content = character.weaknesses as? String,
-                                    backgroundColor = subColor,
-                                    modifier = Modifier.weight(1f)
+                                    title = "Profile",
+                                    content = character.profile,
+                                    backgroundColor = subColor
                                 )
                             }
 
-                            if (character.profile.isNotBlank()) {
-                                InfoCard(title = "Profile", content = character.profile, backgroundColor = subColor)
-                            }
-
-                            if (character.slogan.isNotBlank()) {
-                                InfoCard(title = "Slogan", content = character.slogan, backgroundColor = subColor)
+                            if (!character.slogan.isNullOrBlank()) {
+                                InfoCard(
+                                    title = "Slogan",
+                                    content = character.slogan,
+                                    backgroundColor = subColor
+                                )
                             }
                         }
 
-                        if (character.voice.isNotBlank()) {
+
+
+                        if (!character.voice.isNullOrBlank() && isValidUrl(character.voice)) {
                             Button(
                                 onClick = {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(character.voice))
-                                    context.startActivity(intent)
+                                    try {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(character.voice))
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Cannot open URL", Toast.LENGTH_SHORT).show()
+                                    }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = ButtonDefaults.buttonColors(
@@ -230,7 +281,14 @@ fun UmaDetailScreen(
     }
 }
 
-
+// Helper function to check URL validity
+private fun isValidUrl(url: String?): Boolean {
+    return try {
+        url?.let { Uri.parse(it) } != null
+    } catch (e: Exception) {
+        false
+    }
+}
 
 @Composable
 private fun HeaderSection(
@@ -242,7 +300,7 @@ private fun HeaderSection(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor,
-            contentColor = contentColor // Apply content color
+            contentColor = contentColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -251,14 +309,13 @@ private fun HeaderSection(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = character.nameEn,
+                text = character.nameEn.takeIf { !it.isNullOrBlank() } ?: "Unknown Umamusume",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = character.nameJp,
+                text = character.nameJp.takeIf { !it.isNullOrBlank() } ?: "名前不明",
                 style = MaterialTheme.typography.titleLarge,
-                // Use the content color with slight alpha for secondary text
                 color = contentColor.copy(alpha = 0.7f)
             )
         }
@@ -275,7 +332,7 @@ private fun PhysicalInfoCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor,
-            contentColor = contentColor // Apply content color
+            contentColor = contentColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -287,7 +344,7 @@ private fun PhysicalInfoCard(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            if (character.height > 0) {
+            if (character.height != null && character.height > 0) {
                 Text("Height: ${character.height} cm")
             }
 

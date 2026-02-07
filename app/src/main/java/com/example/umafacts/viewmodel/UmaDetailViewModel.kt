@@ -20,19 +20,26 @@ data class UmaDetailState(
 class UmaDetailViewModel : ViewModel() {
     private val repository = Repository(APIInterface.create())
 
-    // 1. Change to MutableLiveData
     private val _state = MutableLiveData<UmaDetailState>(UmaDetailState())
-
-    // 2. Expose as LiveData
     val state: LiveData<UmaDetailState> = _state
 
-    fun loadCharacterDetails(character: UmamusumeDetail) {
+    fun loadCharacterDetails(character: UmamusumeDetail?) {
         viewModelScope.launch {
-            // Update state to loading
-            // In LiveData, we use .value since we are on the Main thread (via viewModelScope)
+            // Check if character is null
+            if (character == null) {
+                _state.value = UmaDetailState(
+                    error = "Character not found",
+                    isLoading = false
+                )
+                return@launch
+            }
+
             _state.value = _state.value?.copy(
                 isLoading = true,
                 error = null,
+                character = character
+            ) ?: UmaDetailState(
+                isLoading = true,
                 character = character
             )
 
@@ -45,7 +52,7 @@ class UmaDetailViewModel : ViewModel() {
                 }
                 .onFailure { error ->
                     _state.value = _state.value?.copy(
-                        error = error.message,
+                        error = error.message ?: "Failed to load images",
                         isLoading = false
                     )
                 }
