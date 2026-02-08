@@ -94,7 +94,7 @@ fun UmaDetailScreen(
                             painter = painterResource(id = R.drawable.ic_back),
                             contentDescription = "Back",
                             modifier = Modifier.scale(1.1f),
-                            tint = onMainColor
+                            tint = Color.Unspecified
                         )
                     }
                 },
