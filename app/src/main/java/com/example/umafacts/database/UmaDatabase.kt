@@ -9,7 +9,7 @@ import com.example.umafacts.model.Favourite
 
 @Database(
     entities = [Favourite::class],
-    version = 1,
+    version = 5,
     exportSchema = false
 )
 abstract class UmaDatabase : RoomDatabase() {
@@ -25,7 +25,9 @@ abstract class UmaDatabase : RoomDatabase() {
                     context.applicationContext,
                     UmaDatabase::class.java,
                     "uma_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

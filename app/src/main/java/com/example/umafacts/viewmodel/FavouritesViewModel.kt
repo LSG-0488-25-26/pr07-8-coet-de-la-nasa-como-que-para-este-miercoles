@@ -3,6 +3,7 @@ package com.example.umafacts.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.asLiveData
+import com.example.umafacts.model.UmamusumeDetail
 import com.example.umafacts.repository.FavouritesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -15,21 +16,10 @@ class FavouritesViewModel @Inject constructor(
 
     fun isFavourite(characterId: Int) = repository.isFavourite(characterId).asLiveData()
 
-    fun toggleFavourite(characterId: Int) {
+    // Updated to take the object and image URL
+    fun toggleFavourite(detail: UmamusumeDetail, uniformImageUrl: String) {
         viewModelScope.launch {
-            repository.toggleFavourite(characterId)
-        }
-    }
-
-    fun addFavourite(characterId: Int) {
-        viewModelScope.launch {
-            repository.addFavourite(characterId)
-        }
-    }
-
-    fun removeFavourite(characterId: Int) {
-        viewModelScope.launch {
-            repository.removeFavourite(characterId)
+            repository.toggleFavourite(detail, uniformImageUrl)
         }
     }
 

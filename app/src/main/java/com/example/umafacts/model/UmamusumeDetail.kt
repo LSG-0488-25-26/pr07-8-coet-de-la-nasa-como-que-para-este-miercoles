@@ -63,3 +63,17 @@ data class UmamusumeDetail(
     val weaknesses: Any,
     val weight: Any
 )
+
+
+fun UmamusumeDetail.toFavourite(): Favourite {
+    return Favourite(
+        characterId = this.id,
+        nameEn = this.nameEn,
+        nameJp = this.nameJp,
+        colorMain = this.colorMain,
+        colorSub = this.colorSub,
+        thumbImg = this.thumbImg,
+        grade = this.grade,
+        height = this.height
+    )
+}

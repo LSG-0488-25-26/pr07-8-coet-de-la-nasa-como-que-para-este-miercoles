@@ -27,14 +27,23 @@ class UmaViewModel : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading
 
+    private val _isLoadingMore = MutableLiveData<Boolean>(false)
+    val isLoadingMore: LiveData<Boolean> = _isLoadingMore
+
     private val _error = MutableLiveData<String?>(null)
     val error: LiveData<String?> = _error
+
+    // Pagination state
+    private var allCharacters: List<UmamusumeDetail> = emptyList()
+    private var currentPage = 0
+    private val pageSize = 20
+    private var hasMorePages = true
 
     init {
         fetchAllUmamusume()
     }
 
-    fun fetchAllUmamusume() {
+    private fun fetchAllUmamusume() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -42,8 +51,10 @@ class UmaViewModel : ViewModel() {
             repository.getUmamusumeList()
                 .onSuccess { fullList ->
                     if (fullList.isNotEmpty()) {
-                        val completeList = fetchImagesForList(fullList)
-                        _umamusumeList.value = completeList
+                        allCharacters = fullList
+                        currentPage = 0
+                        _umamusumeList.value = emptyList()
+                        loadNextPage()
                     } else {
                         _error.value = "No characters found"
                     }
@@ -53,6 +64,37 @@ class UmaViewModel : ViewModel() {
                 }
 
             _isLoading.value = false
+        }
+    }
+
+    fun loadNextPage() {
+        if (_isLoadingMore.value == true || !hasMorePages) return
+
+        viewModelScope.launch {
+            _isLoadingMore.value = true
+
+            val startIndex = currentPage * pageSize
+            val endIndex = minOf(startIndex + pageSize, allCharacters.size)
+
+            if (startIndex >= allCharacters.size) {
+                hasMorePages = false
+                _isLoadingMore.value = false
+                return@launch
+            }
+
+            val pageCharacters = allCharacters.subList(startIndex, endIndex)
+
+            // Fetch images for the current page
+            val pageWithImages = fetchImagesForList(pageCharacters)
+
+            // Append to existing list
+            val currentList = _umamusumeList.value ?: emptyList()
+            _umamusumeList.value = currentList + pageWithImages
+
+            currentPage++
+            hasMorePages = endIndex < allCharacters.size
+
+            _isLoadingMore.value = false
         }
     }
 
@@ -72,6 +114,9 @@ class UmaViewModel : ViewModel() {
     }
 
     fun refreshData() {
+        allCharacters = emptyList()
+        currentPage = 0
+        hasMorePages = true
         _umamusumeList.value = emptyList()
         _error.value = null
         fetchAllUmamusume()

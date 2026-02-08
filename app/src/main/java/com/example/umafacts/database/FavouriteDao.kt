@@ -16,7 +16,7 @@ interface FavouriteDao {
     @Delete
     suspend fun deleteFavourite(favourite: Favourite)
 
-    @Query("SELECT * FROM favourites ORDER BY addedAt DESC")
+    @Query("SELECT * FROM favourites ORDER BY nameEn ASC")
     fun getAllFavourites(): Flow<List<Favourite>>
 
     @Query("SELECT * FROM favourites WHERE characterId = :characterId")

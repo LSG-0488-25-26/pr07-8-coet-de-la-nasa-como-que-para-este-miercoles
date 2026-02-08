@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -27,15 +28,35 @@ fun UmaListScreen(
 ) {
     val umamusumeList by viewModel.umamusumeList.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
+    val isLoadingMore by viewModel.isLoadingMore.observeAsState(false)
     val error by viewModel.error.observeAsState(null)
 
-    // Observe favorites from Room database (LiveData)
+    // Observe favorites from Room (Contains cached data now)
     val favourites by favouritesViewModel.getAllFavourites().observeAsState(emptyList())
 
-    // Separate favorites from non-favorites
-    val favouriteIds = favourites.map { it.characterId }.toSet()
-    val favouriteCharacters = umamusumeList.filter { it.detail.id in favouriteIds }
-    val nonFavouriteCharacters = umamusumeList.filter { it.detail.id !in favouriteIds }
+    // 1. Get Set of IDs for filtering the main list
+    val favouriteIds = remember(favourites) { favourites.map { it.characterId }.toSet() }
+
+    // 2. Filter main list to exclude favourites (avoid duplicates)
+    val nonFavouriteCharacters = remember(umamusumeList, favouriteIds) {
+        umamusumeList.filter { it.detail.id !in favouriteIds }
+    }
+
+    val listState = rememberLazyListState()
+
+    // Pagination Logic
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull() }
+            .collect { lastVisibleItem ->
+                if (lastVisibleItem != null) {
+                    val lastIndex = lastVisibleItem.index
+                    val totalItems = listState.layoutInfo.totalItemsCount
+                    if (lastIndex >= totalItems - 5 && !isLoadingMore && !isLoading) {
+                        viewModel.loadNextPage()
+                    }
+                }
+            }
+    }
 
     Scaffold(
         topBar = {
@@ -64,75 +85,37 @@ fun UmaListScreen(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             when {
-                isLoading && umamusumeList.isEmpty() -> {
+                // Show loading only if we have NO data at all (neither favorites nor network list)
+                isLoading && umamusumeList.isEmpty() && favourites.isEmpty() -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Loading characters...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text("Loading characters...", modifier = Modifier.padding(top = 16.dp))
                     }
                 }
 
-                error != null && umamusumeList.isEmpty() -> {
+                error != null && umamusumeList.isEmpty() && favourites.isEmpty() -> {
+                    // Error state (only if we have absolutely nothing to show)
                     Column(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp),
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.uma_placeholder),
-                            contentDescription = "Error",
-                            modifier = Modifier.size(120.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = error ?: "Unknown error occurred",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "The server may be temporarily unavailable. Please check your connection and try again.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Button(onClick = { viewModel.refreshData() }) {
-                                Text("Retry")
-                            }
-                            OutlinedButton(onClick = { viewModel.clearError() }) {
-                                Text("Dismiss")
-                            }
-                        }
+                        Image(painter = painterResource(R.drawable.uma_placeholder), contentDescription = null, modifier = Modifier.size(120.dp))
+                        Text(text = error ?: "Error", color = MaterialTheme.colorScheme.error)
+                        Button(onClick = { viewModel.refreshData() }) { Text("Retry") }
                     }
-                }
-
-                umamusumeList.isEmpty() -> {
-                    EmptyListState(
-                        modifier = Modifier.align(Alignment.Center),
-                        onRefresh = { viewModel.refreshData() }
-                    )
                 }
 
                 else -> {
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(vertical = 8.dp)
                     ) {
-                        // Show favorites section if there are any
-                        if (favouriteCharacters.isNotEmpty()) {
+                        // --- FAVOURITES SECTION (Powered by Local DB) ---
+                        if (favourites.isNotEmpty()) {
                             item {
                                 Text(
                                     text = "Favourites ★",
@@ -142,14 +125,16 @@ fun UmaListScreen(
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                                 )
                             }
+                            // Directly iterate over DB objects
                             items(
-                                items = favouriteCharacters,
-                                key = { it.detail.id }
-                            ) { umaWithImage ->
+                                items = favourites,
+                                key = { it.characterId }
+                            ) { favEntity ->
+                                // Reconstruct detail object from cache
                                 UmaItem(
-                                    umamusume = umaWithImage.detail,
-                                    uniformImageUrl = umaWithImage.uniformImageUrl,
-                                    onClick = { onCharacterClick(umaWithImage.detail.id) }
+                                    umamusume = favEntity.toUmamusumeDetail(),
+                                    uniformImageUrl = favEntity.thumbImg,
+                                    onClick = { onCharacterClick(favEntity.characterId) }
                                 )
                             }
 
@@ -161,7 +146,7 @@ fun UmaListScreen(
                             }
                         }
 
-                        // Show all characters
+                        // --- ALL CHARACTERS SECTION (Powered by Network) ---
                         items(
                             items = nonFavouriteCharacters,
                             key = { it.detail.id }
@@ -172,56 +157,16 @@ fun UmaListScreen(
                                 onClick = { onCharacterClick(umaWithImage.detail.id) }
                             )
                         }
+
+                        if (isLoadingMore) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun EmptyListState(
-    modifier: Modifier = Modifier,
-    onRefresh: (() -> Unit)? = null
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.uma_placeholder),
-            contentDescription = "No characters available",
-            modifier = Modifier.size(80.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "No Characters Found",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Text(
-            text = "There are no Umamusume characters to display.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        if (onRefresh != null) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onRefresh,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text("Refresh List")
             }
         }
     }

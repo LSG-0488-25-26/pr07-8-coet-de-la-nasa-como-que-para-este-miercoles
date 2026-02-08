@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.umafacts.R
+import com.example.umafacts.model.UmamusumeDetail
 import com.example.umafacts.ui.components.AudioPlayer
 import com.example.umafacts.ui.components.FactsSection
 import com.example.umafacts.ui.components.InfoCard
@@ -44,65 +45,48 @@ fun UmaDetailScreen(
     detailViewModel: UmaDetailViewModel = viewModel()
 ) {
     val umamusumeList by viewModel.umamusumeList.observeAsState(initial = emptyList())
-    val state by detailViewModel.state.observeAsState(initial = UmaDetailState())
+    // 1. Observe favourites so we can load data even if network list is empty
+    val favourites by favouritesViewModel.getAllFavourites().observeAsState(initial = emptyList())
 
-    val context = LocalContext.current
+    val state by detailViewModel.state.observeAsState(initial = UmaDetailState())
     val isFavourite by favouritesViewModel.isFavourite(characterId).observeAsState(false)
 
-    // Find the character from the observed list with null safety
-    val character = remember(umamusumeList, characterId) {
+    // 2. Find character: Check Network List first, then check Local Database
+    val character: UmamusumeDetail? = remember(umamusumeList, favourites, characterId) {
         umamusumeList.find { it.detail.id == characterId }?.detail
+            ?: favourites.find { it.characterId == characterId }?.toUmamusumeDetail()
     }
 
     LaunchedEffect(character) {
-        detailViewModel.loadCharacterDetails(character)
+        if (character != null) {
+            detailViewModel.loadCharacterDetails(character)
+        }
     }
 
-    // Use safe defaults
-    val safeColorMain = character?.colorMain?.takeIf { !it.isNullOrBlank() } ?: "#808080"
-    val safeColorSub = character?.colorSub?.takeIf { !it.isNullOrBlank() } ?: "#A0A0A0"
+    // Handle null character (Loading/Error)
+    if (character == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
+    // Safe Color Parsing
+    val safeColorMain = character.colorMain.takeIf { !it.isNullOrBlank() } ?: "#808080"
+    val safeColorSub = character.colorSub.takeIf { !it.isNullOrBlank() } ?: "#A0A0A0"
     val mainColor = parseColor(safeColorMain)
     val subColor = parseColor(safeColorSub)
     val onMainColor = textColorFor(mainColor)
     val onSubColor = textColorFor(subColor)
 
-    // Show loading or error states
-    if (character == null || state.error != null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            if (state.error != null) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.uma_placeholder),
-                        contentDescription = "Error",
-                        modifier = Modifier.size(120.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = state.error ?: "Character not found",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onBackClick) {
-                        Text("Go Back")
-                    }
-                }
-            } else {
-                CircularProgressIndicator()
-            }
-        }
-        return
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(character.nameEn.takeIf { !it.isNullOrBlank() } ?: "Unknown Character")
+                    Text(
+                        text = character.nameEn.takeIf { !it.isNullOrBlank() } ?: "Unknown Character",
+                        color = onMainColor
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -110,33 +94,24 @@ fun UmaDetailScreen(
                             painter = painterResource(id = R.drawable.ic_back),
                             contentDescription = "Back",
                             modifier = Modifier.scale(1.1f),
-                            tint = Color.Unspecified
+                            tint = onMainColor
                         )
                     }
                 },
                 actions = {
-                    // Favorite button
                     IconButton(
                         onClick = {
-                            favouritesViewModel.toggleFavourite(characterId)
+                            // 3. CORRECTED CALL: Use the 'character' object and its thumbnail
+                            favouritesViewModel.toggleFavourite(
+                                detail = character,
+                                uniformImageUrl = character.thumbImg // Use thumbnail as the cached image
+                            )
                         }
                     ) {
                         Icon(
-                            imageVector = if (isFavourite) {
-                                Icons.Default.Favorite
-                            } else {
-                                Icons.Default.FavoriteBorder
-                            },
-                            contentDescription = if (isFavourite) {
-                                "Remove from favourites"
-                            } else {
-                                "Add to favourites"
-                            },
-                            tint = if (isFavourite) {
-                                Color.Red
-                            } else {
-                                onMainColor
-                            }
+                            imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (isFavourite) "Remove from favourites" else "Add to favourites",
+                            tint = if (isFavourite) Color.Red else onMainColor
                         )
                     }
                 },
@@ -155,79 +130,73 @@ fun UmaDetailScreen(
                 .padding(paddingValues)
                 .background(mainColor)
         ) {
-            when {
-                state.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = onMainColor
+            if (state.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = onMainColor
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    HeaderSection(
+                        character = character,
+                        backgroundColor = mainColor,
+                        contentColor = onMainColor
                     )
-                }
-                else -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        HeaderSection(
+
+                    OutfitGallery(
+                        images = state.images,
+                        backgroundColor = mainColor,
+                        contentColor = onMainColor
+                    )
+
+                    CompositionLocalProvider(LocalContentColor provides onSubColor) {
+                        // Safe birthday formatting
+                        val birthdayText = try {
+                            formatBirthday(character.birthDay, character.birthMonth)
+                        } catch (e: Exception) {
+                            "Unknown"
+                        }
+
+                        InfoCard(
+                            title = "Birthday",
+                            content = birthdayText,
+                            backgroundColor = subColor
+                        )
+
+                        // (Assuming PhysicalInfoCard is defined in this file or imported)
+                        PhysicalInfoCard(
                             character = character,
-                            backgroundColor = mainColor,
-                            contentColor = onMainColor
+                            backgroundColor = subColor,
+                            contentColor = onSubColor
                         )
 
-                        OutfitGallery(
-                            images = state.images,
-                            backgroundColor = mainColor,
-                            contentColor = onMainColor
-                        )
-
-                        CompositionLocalProvider(LocalContentColor provides onSubColor) {
-                            // Safe birthday formatting
-                            val birthdayText = try {
-                                formatBirthday(character.birthDay, character.birthMonth)
-                            } catch (e: Exception) {
-                                "Unknown"
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (!character.grade.isNullOrBlank()) {
+                                InfoCard(
+                                    title = "Grade",
+                                    content = character.grade,
+                                    backgroundColor = subColor,
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
-
-                            InfoCard(
-                                title = "Birthday",
-                                content = birthdayText,
-                                backgroundColor = subColor
-                            )
-
-                            PhysicalInfoCard(
-                                character = character,
-                                backgroundColor = subColor,
-                                contentColor = onSubColor
-                            )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                if (!character.grade.isNullOrBlank()) {
-                                    InfoCard(
-                                        title = "Grade",
-                                        content = character.grade,
-                                        backgroundColor = subColor,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                } else {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
-
-                                if (!character.residence.isNullOrBlank()) {
-                                    InfoCard(
-                                        title = "Residence",
-                                        content = character.residence,
-                                        backgroundColor = subColor,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                } else {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
+                            if (!character.residence.isNullOrBlank()) {
+                                InfoCard(
+                                    title = "Residence",
+                                    content = character.residence,
+                                    backgroundColor = subColor,
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
+                        }
 
                             FactsSection(
                                 earsFact = character.earsFact as? String,
@@ -297,7 +266,6 @@ fun UmaDetailScreen(
             }
         }
     }
-}
 
 // Helper function to check URL validity
 private fun isValidUrl(url: String?): Boolean {
