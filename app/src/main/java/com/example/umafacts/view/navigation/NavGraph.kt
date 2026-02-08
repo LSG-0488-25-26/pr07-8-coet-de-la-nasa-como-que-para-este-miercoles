@@ -1,16 +1,21 @@
 package com.example.umafacts.view.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.umafacts.view.screens.UmaDetailScreen
 import com.example.umafacts.view.screens.UmaListScreen
+import com.example.umafacts.viewmodel.FavouritesViewModel
 import com.example.umafacts.viewmodel.UmaViewModel
 
 @Composable
-fun NavGraph(viewModel: UmaViewModel) {
+fun NavGraph(
+    viewModel: UmaViewModel,
+    favouritesViewModel: FavouritesViewModel = hiltViewModel()
+) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "list") {
@@ -20,7 +25,8 @@ fun NavGraph(viewModel: UmaViewModel) {
                 viewModel = viewModel,
                 onCharacterClick = { characterId ->
                     navController.navigate("detail/$characterId")
-                }
+                },
+                favouritesViewModel = favouritesViewModel
             )
         }
 
@@ -32,7 +38,8 @@ fun NavGraph(viewModel: UmaViewModel) {
             UmaDetailScreen(
                 viewModel = viewModel,
                 characterId = characterId,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                favouritesViewModel = favouritesViewModel
             )
         }
     }

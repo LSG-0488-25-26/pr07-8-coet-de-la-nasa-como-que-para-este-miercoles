@@ -1,5 +1,6 @@
-package com.example.umafacts.api
+package com.example.umafacts.repository
 
+import com.example.umafacts.api.APIInterface
 import com.example.umafacts.model.CharacterImageResponse
 import com.example.umafacts.model.UmamusumeDetail
 

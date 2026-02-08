@@ -6,6 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -29,12 +32,13 @@ import com.example.umafacts.utils.textColorFor
 import com.example.umafacts.viewmodel.UmaDetailState
 import com.example.umafacts.viewmodel.UmaDetailViewModel
 import com.example.umafacts.viewmodel.UmaViewModel
-import androidx.core.net.toUri
+import com.example.umafacts.viewmodel.FavouritesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UmaDetailScreen(
     viewModel: UmaViewModel,
+    favouritesViewModel: FavouritesViewModel,
     characterId: Int,
     onBackClick: () -> Unit,
     detailViewModel: UmaDetailViewModel = viewModel()
@@ -43,6 +47,7 @@ fun UmaDetailScreen(
     val state by detailViewModel.state.observeAsState(initial = UmaDetailState())
 
     val context = LocalContext.current
+    val isFavourite by favouritesViewModel.isFavourite(characterId).observeAsState(false)
 
     // Find the character from the observed list with null safety
     val character = remember(umamusumeList, characterId) {
@@ -109,10 +114,37 @@ fun UmaDetailScreen(
                         )
                     }
                 },
+                actions = {
+                    // Favorite button
+                    IconButton(
+                        onClick = {
+                            favouritesViewModel.toggleFavourite(characterId)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (isFavourite) {
+                                Icons.Default.Favorite
+                            } else {
+                                Icons.Default.FavoriteBorder
+                            },
+                            contentDescription = if (isFavourite) {
+                                "Remove from favourites"
+                            } else {
+                                "Add to favourites"
+                            },
+                            tint = if (isFavourite) {
+                                Color.Red
+                            } else {
+                                onMainColor
+                            }
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = mainColor,
                     titleContentColor = onMainColor,
-                    navigationIconContentColor = onMainColor
+                    navigationIconContentColor = onMainColor,
+                    actionIconContentColor = onMainColor
                 )
             )
         }
@@ -251,9 +283,7 @@ fun UmaDetailScreen(
                             }
                         }
 
-
-
-                        // Replace the voice button section in UmaDetailScreen.kt:
+                        // Audio player for voice preview
                         if (!character.voice.isNullOrBlank() && isValidUrl(character.voice)) {
                             AudioPlayer(
                                 audioUrl = character.voice,

@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umafacts.api.APIInterface
-import com.example.umafacts.api.Repository
+import com.example.umafacts.repository.Repository
 import com.example.umafacts.model.UmamusumeDetail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
