@@ -5,13 +5,16 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
+import androidx.room.TypeConverters
 import com.example.umafacts.model.Favourite
+import com.example.umafacts.utils.Converters
 
 @Database(
     entities = [Favourite::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class UmaDatabase : RoomDatabase() {
     abstract fun favouriteDao(): FavouriteDao
 

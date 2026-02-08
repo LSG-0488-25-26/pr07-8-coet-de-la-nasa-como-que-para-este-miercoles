@@ -19,8 +19,34 @@ class FavouritesRepository @Inject constructor(
             colorMain = detail.colorMain,
             colorSub = detail.colorSub,
             grade = detail.grade,
-            height = detail.height
-
+            height = detail.height,
+            weight = detail.weight,
+            shoeSize = detail.shoeSize,
+            earsFact = detail.earsFact,
+            tailFact = detail.tailFact,
+            strengths = detail.strengths,
+            weaknesses = detail.weaknesses,
+            voice = detail.voice,
+            profile = detail.profile,
+            slogan = detail.slogan,
+            categoryLabel = detail.categoryLabel,
+            enCategoryLabel = detail.enCategoryLabel,
+            categoryValue = detail.categoryValue,
+            snsHeader = detail.snsHeader,
+            snsIcon = detail.snsIcon,
+            familyFact = detail.familyFact,
+            gameId = detail.gameId,
+            link = detail.link,
+            preferredUrl = detail.preferredUrl,
+            detailImgPc = detail.detailImgPc,
+            detailImgSp = detail.detailImgSp,
+            dateGmt = detail.dateGmt,
+            modifiedGmt = detail.modifiedGmt,
+            residence = detail.residence,
+            rowNumber = detail.rowNumber,
+            birthDay = detail.birthDay,
+            birthMonth = detail.birthMonth,
+            internalName = detail.nameInternal
         )
         favouriteDao.insertFavourite(favourite)
     }

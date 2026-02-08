@@ -6,6 +6,9 @@ import androidx.compose.ui.graphics.luminance
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.core.graphics.toColorInt
+import androidx.room.TypeConverter
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 fun formatBirthday(day: Int?, month: Int?): String {
     // Check if values are null or invalid
@@ -63,4 +66,22 @@ fun textColorFor(backgroundColor: Color): Color {
     // 0.5 is the standard threshold.
     // If luminance is high (bright), use black text.
     return if (backgroundColor.luminance() > 0.5f) Color.Black else Color.White
+}
+
+
+class Converters {
+    private val gson = Gson()
+
+    @TypeConverter
+    fun fromAny(value: Any?): String? {
+        return if (value == null) null else gson.toJson(value)
+    }
+
+    @TypeConverter
+    fun toAny(value: String?): Any? {
+        return if (value == null) null else {
+            val type = object : TypeToken<Any>() {}.type
+            gson.fromJson(value, type)
+        }
+    }
 }
