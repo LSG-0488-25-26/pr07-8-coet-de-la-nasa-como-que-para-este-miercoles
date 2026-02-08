@@ -62,13 +62,14 @@ fun UmaListScreen(
                 }
             }
     }
-
     Scaffold(
         topBar = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
                 Text(
                     text = "Umamusume Facts",
@@ -76,7 +77,7 @@ fun UmaListScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = searchQuery,
